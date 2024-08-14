@@ -2,6 +2,10 @@
 #include "gui/cli/ui.h"
 
 int main() {
-  render();
+  GameInfo_t info = updateCurrentState();
+  init();
+  gameloop(info);
+  close();
+  // printf("%d", info.level);
   return 0;
 }
