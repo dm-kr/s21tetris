@@ -58,20 +58,38 @@ typedef struct {
   Piece_t *piece;
   int next_index;
   FSM_t state;
+  clock_t timer;
 } GameState_t;
 
-int **get_empty_field();
-int **get_empty_piece();
-void clear_gameinfo(GameInfo_t info);
-void clear_pieces(int ***pieces);
-int ***get_pieces_array();
+void copy_info(GameInfo_t *src, GameInfo_t *dst);
+int **get_empty_field(void);
+void copy_field(int **src, int **dst);
+int **get_empty_piece(void);
+void clear_piece(int **piece);
+void clear_field(int **field);
+void clear_gameinfo(void);
+void clear_gamestate(void);
+int ***get_pieces_array(void);
+void find_edges(int **piece, int *x1, int *x2, int *y);
 int check_collision(Piece_t piece);
 int draw_piece(int **field, Piece_t piece);
 void spawn_piece(GameState_t *state);
-int move_piece(GameState_t state, int dir);
-void init_gameinfo();
-GameState_t *get_gamestate();
+int move_piece(GameState_t *state, int dir);
+void rotate_odd(Piece_t *piece, int **new);
+void rotate_even(Piece_t *piece, int **new);
+void rotate(Piece_t *piece);
+void read_highscore(void);
+void init_gameinfo(void);
+Piece_t *init_piece(void);
+GameState_t *init_gamestate(void);
+GameState_t *get_gamestate(GameState_t *state);
 void userInput(UserAction_t action, bool hold);
-GameInfo_t updateCurrentState();
+void shift_matrix_down(int start);
+int check_lines(void);
+void add_points(int lines);
+void set_level(void);
+void set_highscore(void);
+void set_speed(void);
+GameInfo_t updateCurrentState(void);
 
 #endif

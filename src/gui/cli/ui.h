@@ -13,10 +13,24 @@
 #define X_MENU 22
 #define MENU_WIDTH 13
 
+#include "ui.h"
+
 void init();
+UserAction_t get_action(int key);
 void gameloop();
 void close();
-void draw_square(int start_x, int start_y, int color);
+
+void draw_gameover(GameInfo_t info);
+void draw_start_menu();
+void draw_pause();
+void draw_frame(int x, int y, int width, int height);
+void draw_score(GameInfo_t info);
+void draw_highscore(GameInfo_t info);
+void draw_next(GameInfo_t info);
+void draw_level(GameInfo_t info);
+void draw_square(int y, int x, int color);
+void draw_game_window(int x_start, int** field);
+
 void render(GameInfo_t info);
 
 #endif

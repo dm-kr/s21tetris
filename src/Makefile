@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror
-LFLAGS = -L$(LIB_DIR) -l$(APILIBNAME) -l$(UILIBNAME) -lncurses
+LFLAGS = -L$(LIB_DIR) -l$(APILIBNAME) -l$(UILIBNAME) -lncurses 
 API_DIR = brick_game/tetris/
 API_SRC = $(patsubst $(API_DIR)%.c, %.c, $(wildcard $(API_DIR)*.c))
 API_OBJ = $(patsubst %.c, %.o, $(API_SRC))
@@ -56,7 +56,7 @@ test:
 gcov_report:
 
 valgrind: install
-	@valgrind --tool=memcheck --leak-check=full --track-origins=yes ./game
+	@valgrind --tool=memcheck --leak-check=full --track-origins=yes -s ./game
 
 clean:
 	@rm -rf $(OBJ_DIR) $(LIB_DIR) game highscore.txt
