@@ -1,4 +1,4 @@
-#include "tetris_api.h"
+#include "tetris_logic.h"
 
 static GameInfo_t current_state = {0};
 
@@ -7,6 +7,29 @@ void copy_info(GameInfo_t *src, GameInfo_t *dst) {
   dst->level = src->level;
   dst->next = src->next;
   dst->score = src->score;
+}
+
+int **get_empty_matrix(int rows, int cols) {
+  int **matrix = calloc(rows, sizeof(int *));
+  for (int i = 0; i < rows; ++i) {
+    matrix[i] = calloc(cols, sizeof(int));
+  }
+  return matrix;
+}
+
+void clear_matrix(int **matrix, int rows) {
+  for (int i = 0; i < rows; ++i) {
+    free(matrix[i]);
+  }
+  free(matrix);
+}
+
+void copy_matrix(int **src, int **dst, int rows, int cols) {
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      dst[i][j] = src[i][j];
+    }
+  }
 }
 
 int **get_empty_field() {
@@ -124,16 +147,17 @@ void find_edges(int **piece, int *x1, int *x2, int *y) {
   }
 }
 
-int is_overlapping(int **field, Piece_t *piece) {
-  int result = 0;
+int is_overlapping(int **field, Piece_t piece) {
+  int overlap = 0;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      if (piece->piece[j][i] != 0 && ((j + piece->y) >= 0)) {
-        result |= field[j + piece->y][i + piece->x] > 0;
+      if (piece.piece[j][i] != 0 && ((j + piece.y) >= 0)) {
+        int color = field[j + piece.y][i + piece.x];
+        overlap |= color > 0 && color < 100;
       }
     }
   }
-  return result;
+  return overlap;
 }
 
 void ghost(int **field, Piece_t *piece) {
@@ -141,7 +165,7 @@ void ghost(int **field, Piece_t *piece) {
   int x2 = 0;
   int y = 0;
   find_edges(piece->piece, &x1, &x2, &y);
-  while (piece->y + y < ROWS && !is_overlapping(field, piece)) {
+  while (piece->y + y < ROWS && !is_overlapping(field, *piece)) {
     piece->y++;
     find_edges(piece->piece, &x1, &x2, &y);
   }
@@ -185,20 +209,21 @@ int check_collision(Piece_t piece) {
 }
 
 int draw_piece(int **field, Piece_t piece) {
-  int overwrite = 0;
+  int overlap = 0;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       if (piece.piece[j][i] != 0 && ((j + piece.y) >= 0)) {
         int color = field[j + piece.y][i + piece.x];
-        overwrite |= color > 0 && color < 100;
+        overlap |= color > 0 && color < 100;
         field[j + piece.y][i + piece.x] = piece.piece[j][i];
       }
     }
   }
-  return overwrite;
+  return overlap;
 }
 
 void spawn_piece(GameState_t *state) {
+  srand(time(NULL));
   int piece_index = state->next_index;
   state->piece->x = 3;
   state->piece->y = -2;
@@ -211,7 +236,7 @@ void spawn_piece(GameState_t *state) {
   copy_field(current_state.field, state->backup);
   int error = check_collision(*state->piece);
   if (error == 0) {
-    state->next_index = (clock() * clock()) % 7;
+    state->next_index = (rand() * clock()) % 7;
     copy_piece(state->pieces[state->next_index], current_state.next);
     copy_field(state->temp_field, current_state.field);
   } else {
@@ -240,18 +265,18 @@ int move_piece(GameState_t *state, int dir) {
   return error;
 }
 
-void rotate_odd(Piece_t *piece, int **new) {
+void rotate_odd(Piece_t *piece, int **result) {
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 3; ++j) {
-      new[i + 1][j] = piece->piece[3 - j][i];
+      result[i + 1][j] = piece->piece[3 - j][i];
     }
   }
 }
 
-void rotate_even(Piece_t *piece, int **new) {
+void rotate_even(Piece_t *piece, int **result) {
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      new[i][j] = piece->piece[3 - j][i];
+      result[i][j] = piece->piece[3 - j][i];
     }
   }
 }
@@ -260,26 +285,26 @@ void rotate(Piece_t *piece) {
   int x1 = 4;
   int x2 = 0;
   int y = 0;
-  Piece_t new;
-  new.piece = get_empty_piece();
-  new.x = piece->x;
-  new.y = piece->y;
-  new.type = piece->type;
+  Piece_t result;
+  result.piece = get_empty_piece();
+  result.x = piece->x;
+  result.y = piece->y;
+  result.type = piece->type;
   if (piece->type == Odd) {
-    rotate_odd(piece, new.piece);
+    rotate_odd(piece, result.piece);
   } else {
-    rotate_even(piece, new.piece);
+    rotate_even(piece, result.piece);
   }
-  find_edges(new.piece, &x1, &x2, &y);
+  find_edges(result.piece, &x1, &x2, &y);
   if (piece->x + x1 >= 0 && piece->x + x2 <= COLUMNS && piece->y + y <= ROWS) {
     GameState_t *state = get_gamestate(NULL);
-    int error = check_collision(new);
+    int error = check_collision(result);
     if (error == 0) {
       copy_field(state->temp_field, current_state.field);
-      copy_piece(new.piece, piece->piece);
+      copy_piece(result.piece, piece->piece);
     }
   }
-  clear_piece(new.piece);
+  clear_piece(result.piece);
 }
 
 void read_highscore() {
@@ -291,6 +316,9 @@ void read_highscore() {
 }
 
 void init_gameinfo() {
+  if (current_state.field) {
+    clear_memory();
+  }
   current_state.field = get_empty_field();
   current_state.next = get_empty_piece();
   current_state.speed = 500000;
@@ -305,8 +333,9 @@ Piece_t *init_piece() {
 }
 
 GameState_t *init_gamestate() {
+  srand(time(NULL));
   GameState_t *state = (GameState_t *)calloc(1, sizeof(GameState_t));
-  state->next_index = (clock() * clock()) % 7;
+  state->next_index = (rand() * clock()) % 7;
   state->state = Init;
   state->temp_field = get_empty_field();
   state->backup = get_empty_field();
@@ -412,12 +441,19 @@ void userInput(UserAction_t action, bool hold) {
   }
   switch (action) {
     case Start:
-      init_gameinfo();
-      state = get_gamestate(init_gamestate());
-      state->state = Init;
+      if (current_state.speed == 0) {
+        init_gameinfo();
+        state = get_gamestate(init_gamestate());
+        state->state = Init;
+      }
       break;
     case Pause:
-      state->state = Paused;
+      current_state.pause = 1 - current_state.pause;
+      if (current_state.pause) {
+        state->state = Paused;
+      } else {
+        state->state = Moving;
+      }
       break;
     case Terminate:
       state->state = Termination;
@@ -427,6 +463,7 @@ void userInput(UserAction_t action, bool hold) {
     case Right:
       state->state = Shifting;
       move_piece(state, action * hold);
+      state->state = Moving;
       break;
     case Down:
       state->state = Attaching;
@@ -447,7 +484,7 @@ void userInput(UserAction_t action, bool hold) {
 GameInfo_t updateCurrentState() {
   GameState_t *state = get_gamestate(NULL);
   int error = 0;
-  if (clock() - state->timer > current_state.speed) {
+  if (clock() - state->timer > current_state.speed && state->state == Moving) {
     error = move_piece(state, 6);
     if (error != 0) {
       state->state = Attaching;
@@ -469,6 +506,7 @@ GameInfo_t updateCurrentState() {
     }
     state->state = Spawn;
     spawn_piece(state);
+    state->state = Moving;
   }
   return current_state;
 }

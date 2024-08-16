@@ -76,6 +76,8 @@ void draw_gameover(GameInfo_t info) {
 }
 
 void draw_start_menu() {
+  GameInfo_t empty = {0};
+  render(empty);
   mvprintw(Y_START + 8, X_START + 7, "PRESS S");
   draw_frame(4, 8, 12, 1);
 }
@@ -155,4 +157,5 @@ void render(GameInfo_t info) {
   draw_level(info);
   draw_frame(0, 0, 21, 20);
   draw_frame(X_MENU, 0, MENU_WIDTH, 20);
+  refresh();
 }
