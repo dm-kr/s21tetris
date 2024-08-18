@@ -400,7 +400,8 @@ void drop_piece() {
   GameState_t *state = get_gamestate(NULL);
   int x = state->piece->x;
   int y = state->piece->y;
-  while (move_piece(state, 6) == 0);
+  while (move_piece(state, 6) == 0)
+    ;
   state->piece->x = x;
   state->piece->y = y;
 }

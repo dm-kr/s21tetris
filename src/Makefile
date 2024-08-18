@@ -83,5 +83,13 @@ gcov_report: clean test
 valgrind: install
 	@valgrind --tool=memcheck --leak-check=full --track-origins=yes -s ./$(APPNAME)
 
+clang:
+	@clang-format -n *.c -style=Google
+	@clang-format -n **/**/*.c -style=Google
+
+fix-clang:
+	@clang-format -i *.c -style=Google
+	@clang-format -i **/**/*.c -style=Google
+
 clean:
 	@rm -rf $(OBJ_DIR) $(LIB_DIR) $(DIST_DIR) $(DOXY_DIR) $(APPNAME) $(GCOV_DIR) coverage_report tests/test highscore.txt
