@@ -157,5 +157,8 @@ void render(GameInfo_t info) {
   draw_level(info);
   draw_frame(0, 0, 21, 20);
   draw_frame(X_MENU, 0, MENU_WIDTH, 20);
+  if (info.pause) {
+    draw_pause();
+  }
   refresh();
 }

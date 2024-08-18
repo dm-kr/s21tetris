@@ -51,7 +51,7 @@ typedef enum { Odd, Even } PieceType_t;
  * @param score Score value.
  * @param high_score highscore value.
  * @param level Level value (max level is 10).
- * @param speed Current piece fall rate.
+ * @param speed Current tetromino fall rate.
  * @param pause
  */
 typedef struct {
@@ -66,6 +66,10 @@ typedef struct {
 
 /**
  * @brief Struct, containing information about tetromino.
+ * @param piece 2D int array, containing tetromino's shape.
+ * @param type Enum, defining type of the tetromino to choose rotation logic.
+ * @param x Position of the tetromino by X axis.
+ * @param y Position of the tetromino by Y axis.
  */
 typedef struct {
   int **piece;
@@ -77,6 +81,19 @@ typedef struct {
 /**
  * @brief Struct, containing various informations of the current state of the
  * game.
+ * @param pieces Array of all possible tetromino shapes.
+ * @param backup 2D int array, containing field state before last tetromino was
+ * placed.
+ * @param temp_field 2D int array, contating current state of the field, which
+ * is used for drawing a new position of moving tetromino and collision
+ * checking.
+ * @param piece Pointer to a struct, that contains information of current moving
+ * tetromino.
+ * @param next_index Random number in range [0, 6] used for determining a next
+ * tetromino to appear.
+ * @param state Enum, describing current state of the game.
+ * @param timer Clock_t value, containint previous time when tetromino has
+ * moved down.
  */
 typedef struct {
   int ***pieces;

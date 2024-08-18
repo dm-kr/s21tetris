@@ -1,5 +1,6 @@
 {
   "files.associations": {
-    "tetris_api.h": "c"
+    "tetris_api.h": "c",
+    "tetris_tests.h": "c"
   }
 }

@@ -32,76 +32,30 @@ void copy_matrix(int **src, int **dst, int rows, int cols) {
   }
 }
 
-int **get_empty_field() {
-  int **field = calloc(ROWS, sizeof(int *));
-  for (int i = 0; i < ROWS; ++i) {
-    field[i] = calloc(COLUMNS, sizeof(int));
-  }
-  return field;
-}
-
-void copy_field(int **src, int **dst) {
-  for (int i = 0; i < ROWS; ++i) {
-    for (int j = 0; j < COLUMNS; ++j) {
-      dst[i][j] = src[i][j];
-    }
-  }
-}
-
-int **get_empty_piece() {
-  int **piece = calloc(4, sizeof(int *));
-  for (int i = 0; i < 4; ++i) {
-    piece[i] = calloc(4, sizeof(int));
-  }
-  return piece;
-}
-
-void copy_piece(int **src, int **dst) {
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      dst[i][j] = src[i][j];
-    }
-  }
-}
-
-void clear_piece(int **piece) {
-  for (int i = 0; i < 4; ++i) {
-    free(piece[i]);
-  }
-  free(piece);
-}
-
-void clear_field(int **field) {
-  for (int i = 0; i < ROWS; ++i) {
-    free(field[i]);
-  }
-  free(field);
-}
-
 void clear_gameinfo() {
   if (current_state.field) {
-    clear_field(current_state.field);
+    clear_matrix(current_state.field, ROWS);
   }
   if (current_state.next) {
-    clear_piece(current_state.next);
+    clear_matrix(current_state.next, 4);
   }
 }
 
 void clear_gamestate() {
   GameState_t *state = get_gamestate(NULL);
   if (state->temp_field) {
-    clear_field(state->temp_field);
+    clear_matrix(state->temp_field, ROWS);
   }
   if (state->backup) {
-    clear_field(state->backup);
+    clear_matrix(state->backup, ROWS);
   }
   if (state->piece) {
-    clear_piece(state->piece->piece);
+    clear_matrix(state->piece->piece, 4);
     free(state->piece);
   }
   if (state->pieces) {
     for (int i = 0; i < 7; ++i) {
-      clear_piece(state->pieces[i]);
+      clear_matrix(state->pieces[i], 4);
     }
     free(state->pieces);
   }
@@ -116,7 +70,7 @@ int ***get_pieces_array() {
   int n = 0;
   int ***pieces = calloc(7, sizeof(int *) * 4);
   for (int i = 0; i < 7; ++i) {
-    pieces[i] = get_empty_piece();
+    pieces[i] = get_empty_matrix(4, 4);
   }
   while ((read = getline(&line, &len, file)) != -1) {
     getline(&line, &len, file);
@@ -182,7 +136,7 @@ void paint_piece(int **piece, int color) {
   }
 }
 
-int check_collision(Piece_t piece) {
+int draw_next_frame(Piece_t piece) {
   int error = 0;
   int x1 = 3;
   int x2 = 0;
@@ -192,16 +146,16 @@ int check_collision(Piece_t piece) {
     error = 1;
   } else {
     GameState_t *state = get_gamestate(NULL);
-    copy_field(state->backup, state->temp_field);
+    copy_matrix(state->backup, state->temp_field, ROWS, COLUMNS);
     Piece_t *temp = calloc(1, sizeof(Piece_t));
-    temp->piece = get_empty_piece();
-    copy_piece(piece.piece, temp->piece);
+    temp->piece = get_empty_matrix(4, 4);
+    copy_matrix(piece.piece, temp->piece, 4, 4);
     temp->x = piece.x;
     temp->y = piece.y;
     ghost(state->temp_field, temp);
     paint_piece(temp->piece, 100);
     error = draw_piece(state->temp_field, *temp);
-    clear_piece(temp->piece);
+    clear_matrix(temp->piece, 4);
     free(temp);
     error = draw_piece(state->temp_field, piece);
   }
@@ -227,18 +181,18 @@ void spawn_piece(GameState_t *state) {
   int piece_index = state->next_index;
   state->piece->x = 3;
   state->piece->y = -2;
-  copy_piece(state->pieces[piece_index], state->piece->piece);
+  copy_matrix(state->pieces[piece_index], state->piece->piece, 4, 4);
   if (piece_index == 0 || piece_index == 3) {
     state->piece->type = Even;
   } else {
     state->piece->type = Odd;
   }
-  copy_field(current_state.field, state->backup);
-  int error = check_collision(*state->piece);
+  copy_matrix(current_state.field, state->backup, ROWS, COLUMNS);
+  int error = draw_next_frame(*state->piece);
   if (error == 0) {
     state->next_index = (rand() * clock()) % 7;
-    copy_piece(state->pieces[state->next_index], current_state.next);
-    copy_field(state->temp_field, current_state.field);
+    copy_matrix(state->pieces[state->next_index], current_state.next, 4, 4);
+    copy_matrix(state->temp_field, current_state.field, ROWS, COLUMNS);
   } else {
     current_state.speed = 0;
   }
@@ -255,12 +209,12 @@ int move_piece(GameState_t *state, int dir) {
   } else if (dir == 4) {
     state->piece->x++;
   }
-  error = check_collision(*state->piece);
+  error = draw_next_frame(*state->piece);
   if (error) {
     state->piece->x = x;
     state->piece->y = y;
   } else {
-    copy_field(state->temp_field, current_state.field);
+    copy_matrix(state->temp_field, current_state.field, ROWS, COLUMNS);
   }
   return error;
 }
@@ -286,7 +240,7 @@ void rotate(Piece_t *piece) {
   int x2 = 0;
   int y = 0;
   Piece_t result;
-  result.piece = get_empty_piece();
+  result.piece = get_empty_matrix(4, 4);
   result.x = piece->x;
   result.y = piece->y;
   result.type = piece->type;
@@ -298,13 +252,13 @@ void rotate(Piece_t *piece) {
   find_edges(result.piece, &x1, &x2, &y);
   if (piece->x + x1 >= 0 && piece->x + x2 <= COLUMNS && piece->y + y <= ROWS) {
     GameState_t *state = get_gamestate(NULL);
-    int error = check_collision(result);
+    int error = draw_next_frame(result);
     if (error == 0) {
-      copy_field(state->temp_field, current_state.field);
-      copy_piece(result.piece, piece->piece);
+      copy_matrix(state->temp_field, current_state.field, ROWS, COLUMNS);
+      copy_matrix(result.piece, piece->piece, 4, 4);
     }
   }
-  clear_piece(result.piece);
+  clear_matrix(result.piece, 4);
 }
 
 void read_highscore() {
@@ -319,8 +273,8 @@ void init_gameinfo() {
   if (current_state.field) {
     clear_memory();
   }
-  current_state.field = get_empty_field();
-  current_state.next = get_empty_piece();
+  current_state.field = get_empty_matrix(ROWS, COLUMNS);
+  current_state.next = get_empty_matrix(4, 4);
   current_state.speed = 500000;
   current_state.level = 1;
   read_highscore();
@@ -328,7 +282,7 @@ void init_gameinfo() {
 
 Piece_t *init_piece() {
   Piece_t *piece = calloc(1, sizeof(Piece_t));
-  piece->piece = get_empty_piece();
+  piece->piece = get_empty_matrix(4, 4);
   return piece;
 }
 
@@ -337,8 +291,8 @@ GameState_t *init_gamestate() {
   GameState_t *state = (GameState_t *)calloc(1, sizeof(GameState_t));
   state->next_index = (rand() * clock()) % 7;
   state->state = Init;
-  state->temp_field = get_empty_field();
-  state->backup = get_empty_field();
+  state->temp_field = get_empty_matrix(ROWS, COLUMNS);
+  state->backup = get_empty_matrix(ROWS, COLUMNS);
   state->pieces = get_pieces_array();
   state->piece = init_piece();
   state->timer = clock();
@@ -382,7 +336,7 @@ int check_lines() {
     }
   }
   GameState_t *state = get_gamestate(NULL);
-  copy_field(current_state.field, state->backup);
+  copy_matrix(current_state.field, state->backup, ROWS, COLUMNS);
   return counter;
 }
 

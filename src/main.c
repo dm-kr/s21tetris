@@ -18,10 +18,6 @@ void gameloop() {
       action = get_action(getch());
       userInput(action, true);
     }
-    if (action == Pause && start == 1) {
-      pause = 1 - pause;
-      draw_pause();
-    }
     if (pause == 0 && start == 1) {
       userInput(action, true);
       info = updateCurrentState();
