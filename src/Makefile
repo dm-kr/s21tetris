@@ -84,4 +84,4 @@ valgrind: install
 	@valgrind --tool=memcheck --leak-check=full --track-origins=yes -s ./$(APPNAME)
 
 clean:
-	@rm -rf $(OBJ_DIR) $(LIB_DIR) $(DIST_DIR) $(DOXY_DIR) $(APPNAME) $(GCOV_DIR) coverage_report highscore.txt
+	@rm -rf $(OBJ_DIR) $(LIB_DIR) $(DIST_DIR) $(DOXY_DIR) $(APPNAME) $(GCOV_DIR) coverage_report tests/test highscore.txt
