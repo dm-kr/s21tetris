@@ -1,7 +1,7 @@
 #include "tetris_tests.h"
 
 void run_tests(int *number_all, int *number_failed) {
-  Suite *list_cases[] = {suite_rotate(), NULL};
+  Suite *list_cases[] = {suite_general(), NULL};
   for (Suite **current_testcase = list_cases; *current_testcase != NULL;
        current_testcase++) {
     run_testcase(*current_testcase, number_all, number_failed);

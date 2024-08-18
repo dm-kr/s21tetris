@@ -2,6 +2,17 @@
 
 static GameInfo_t current_state = {0};
 
+GameInfo_t get_info() { return current_state; }
+
+void clear_gamefield() {
+  GameState_t *state = get_gamestate(NULL);
+  int **matrix = get_empty_matrix(ROWS, COLUMNS);
+  copy_matrix(matrix, current_state.field, ROWS, COLUMNS);
+  copy_matrix(matrix, state->backup, ROWS, COLUMNS);
+  copy_matrix(matrix, state->temp_field, ROWS, COLUMNS);
+  clear_matrix(matrix, ROWS);
+}
+
 void copy_info(GameInfo_t *src, GameInfo_t *dst) {
   dst->high_score = src->high_score;
   dst->level = src->level;
@@ -33,12 +44,13 @@ void copy_matrix(int **src, int **dst, int rows, int cols) {
 }
 
 void clear_gameinfo() {
-  if (current_state.field) {
-    clear_matrix(current_state.field, ROWS);
-  }
-  if (current_state.next) {
-    clear_matrix(current_state.next, 4);
-  }
+  clear_matrix(current_state.field, ROWS);
+  clear_matrix(current_state.next, 4);
+  current_state.high_score = 0;
+  current_state.level = 0;
+  current_state.pause = 0;
+  current_state.score = 0;
+  current_state.speed = 0;
 }
 
 void clear_gamestate() {
@@ -59,7 +71,9 @@ void clear_gamestate() {
     }
     free(state->pieces);
   }
-  free(state);
+  if (state) {
+    free(state);
+  }
 }
 
 int ***get_pieces_array() {
@@ -154,10 +168,10 @@ int draw_next_frame(Piece_t piece) {
     temp->y = piece.y;
     ghost(state->temp_field, temp);
     paint_piece(temp->piece, 100);
-    error = draw_piece(state->temp_field, *temp);
+    error |= draw_piece(state->temp_field, *temp);
     clear_matrix(temp->piece, 4);
     free(temp);
-    error = draw_piece(state->temp_field, piece);
+    error |= draw_piece(state->temp_field, piece);
   }
   return error;
 }
@@ -176,7 +190,7 @@ int draw_piece(int **field, Piece_t piece) {
   return overlap;
 }
 
-void spawn_piece(GameState_t *state) {
+int spawn_piece(GameState_t *state) {
   srand(time(NULL));
   int piece_index = state->next_index;
   state->piece->x = 3;
@@ -195,7 +209,9 @@ void spawn_piece(GameState_t *state) {
     copy_matrix(state->temp_field, current_state.field, ROWS, COLUMNS);
   } else {
     current_state.speed = 0;
+    state->state = Paused;
   }
+  return error;
 }
 
 int move_piece(GameState_t *state, int dir) {
@@ -235,10 +251,11 @@ void rotate_even(Piece_t *piece, int **result) {
   }
 }
 
-void rotate(Piece_t *piece) {
+int rotate(Piece_t *piece) {
   int x1 = 4;
   int x2 = 0;
   int y = 0;
+  int error = 0;
   Piece_t result;
   result.piece = get_empty_matrix(4, 4);
   result.x = piece->x;
@@ -252,13 +269,16 @@ void rotate(Piece_t *piece) {
   find_edges(result.piece, &x1, &x2, &y);
   if (piece->x + x1 >= 0 && piece->x + x2 <= COLUMNS && piece->y + y <= ROWS) {
     GameState_t *state = get_gamestate(NULL);
-    int error = draw_next_frame(result);
+    error = draw_next_frame(result);
     if (error == 0) {
       copy_matrix(state->temp_field, current_state.field, ROWS, COLUMNS);
       copy_matrix(result.piece, piece->piece, 4, 4);
     }
+  } else {
+    error = 1;
   }
   clear_matrix(result.piece, 4);
+  return error;
 }
 
 void read_highscore() {
@@ -355,9 +375,6 @@ void add_points(int lines) {
     case 4:
       points = 1500;
       break;
-    default:
-      points = 0;
-      break;
   }
   current_state.score += points;
 }
@@ -422,8 +439,6 @@ void userInput(UserAction_t action, bool hold) {
     case Down:
       state->state = Attaching;
       drop_piece();
-      break;
-    case Up:
       break;
     case Action:
       state->state = Rotation;

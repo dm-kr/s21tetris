@@ -27,6 +27,13 @@
 #define COLUMNS 10
 
 /**
+ * @brief Get current GameInfo_t struct.
+ */
+GameInfo_t get_info();
+
+void clear_gamefield();
+
+/**
  * @brief Copy all values from one GameInfo_t to another besides pointers.
  * @param src Value to copy.
  * @param dst Value where to copy.
@@ -131,7 +138,7 @@ int draw_piece(int **field, Piece_t piece);
  * @brief Spawn a new tetromino.
  * @param state Current state of the game.
  */
-void spawn_piece(GameState_t *state);
+int spawn_piece(GameState_t *state);
 
 /**
  * @brief Move piece in given direction if possible.
@@ -159,7 +166,7 @@ void rotate_even(Piece_t *piece, int **result);
  * @brief Rotate given tetromino.
  * @param piece Tetromino to rotate.
  */
-void rotate(Piece_t *piece);
+int rotate(Piece_t *piece);
 
 /**
  * @brief Read hghscore from file.
